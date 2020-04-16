@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>131 Dog's Species</h1>
+<form id="image" action="predict"  method="post" enctype=multipart/form-data>
+    <label for="img">Image:</label>
+    <input name="img" type="file" alt="image"><br><br>
+
+    <input type="submit" value="Submit">
+</form>
+{% if show_result == True %}
+<h2>Result</h2>
+<p>Class id: {{ pred_id }}</p>
+<p>Specie: {{ text_pred }}</p>
+{% endif %}
+</body>
+</html>

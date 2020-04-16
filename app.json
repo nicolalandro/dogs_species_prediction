@@ -1,0 +1,10 @@
+{
+  "name": "131 Dog's Species",
+  "description": "A simple specie of dogs classifier",
+  "repository": "https://github.com/nicolalandro/dogs_species_prediction.git",
+  "keywords": [
+    "python",
+    "flask",
+    "torch"
+  ]
+}
