@@ -7,6 +7,8 @@ from flask import render_template
 from torchvision import transforms
 from werkzeug import run_simple
 
+from src.demo.nts_net.model import attention_net
+
 app = Flask(__name__)
 
 
@@ -62,7 +64,8 @@ def model_predict(img):
     scaled_img = transform_test(img)
     torch_images = scaled_img.unsqueeze(0)
 
-    net = torch.load('models/nts_net.pt')
+    net = attention_net(topN=6, num_classes=131, device=(torch.device('cpu')))
+    net.load_state_dict(torch.load('models/nts_net_state.pt'))
     net.eval()
     with torch.no_grad():
         _, _, row_logits, concat_logits, _, _, _ = net(torch_images)
