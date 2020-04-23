@@ -7,9 +7,9 @@ Searching for MobileNetV3
 arXiv preprint arXiv:1905.02244.
 """
 
-import torch.nn as nn
 import math
 
+import torch.nn as nn
 
 __all__ = ['mobilenetv3_large', 'mobilenetv3_small']
 
@@ -57,10 +57,10 @@ class SELayer(nn.Module):
         super(SELayer, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
-                nn.Linear(channel, channel // reduction),
-                nn.ReLU(inplace=True),
-                nn.Linear(channel // reduction, channel),
-                h_sigmoid()
+            nn.Linear(channel, channel // reduction),
+            nn.ReLU(inplace=True),
+            nn.Linear(channel // reduction, channel),
+            h_sigmoid()
         )
 
     def forward(self, x):
@@ -96,7 +96,8 @@ class InvertedResidual(nn.Module):
         if inp == hidden_dim:
             self.conv = nn.Sequential(
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride, (kernel_size - 1) // 2, groups=hidden_dim, bias=False),
+                nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride, (kernel_size - 1) // 2, groups=hidden_dim,
+                          bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 h_swish() if use_hs else nn.ReLU(inplace=True),
                 # Squeeze-and-Excite
@@ -112,7 +113,8 @@ class InvertedResidual(nn.Module):
                 nn.BatchNorm2d(hidden_dim),
                 h_swish() if use_hs else nn.ReLU(inplace=True),
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride, (kernel_size - 1) // 2, groups=hidden_dim, bias=False),
+                nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride, (kernel_size - 1) // 2, groups=hidden_dim,
+                          bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 # Squeeze-and-Excite
                 SELayer(hidden_dim) if use_se else nn.Sequential(),
@@ -197,16 +199,16 @@ def mobilenetv3_large(**kwargs):
     """
     cfgs = [
         # k, t, c, SE, NL, s
-        [3,  16,  16, 0, 0, 1],
-        [3,  64,  24, 0, 0, 2],
-        [3,  72,  24, 0, 0, 1],
-        [5,  72,  40, 1, 0, 2],
-        [5, 120,  40, 1, 0, 1],
-        [5, 120,  40, 1, 0, 1],
-        [3, 240,  80, 0, 1, 2],
-        [3, 200,  80, 0, 1, 1],
-        [3, 184,  80, 0, 1, 1],
-        [3, 184,  80, 0, 1, 1],
+        [3, 16, 16, 0, 0, 1],
+        [3, 64, 24, 0, 0, 2],
+        [3, 72, 24, 0, 0, 1],
+        [5, 72, 40, 1, 0, 2],
+        [5, 120, 40, 1, 0, 1],
+        [5, 120, 40, 1, 0, 1],
+        [3, 240, 80, 0, 1, 2],
+        [3, 200, 80, 0, 1, 1],
+        [3, 184, 80, 0, 1, 1],
+        [3, 184, 80, 0, 1, 1],
         [3, 480, 112, 1, 1, 1],
         [3, 672, 112, 1, 1, 1],
         [5, 672, 160, 1, 1, 1],
@@ -222,18 +224,44 @@ def mobilenetv3_small(**kwargs):
     """
     cfgs = [
         # k, t, c, SE, NL, s
-        [3,  16,  16, 1, 0, 2],
-        [3,  72,  24, 0, 0, 2],
-        [3,  88,  24, 0, 0, 1],
-        [5,  96,  40, 1, 1, 2],
-        [5, 240,  40, 1, 1, 1],
-        [5, 240,  40, 1, 1, 1],
-        [5, 120,  48, 1, 1, 1],
-        [5, 144,  48, 1, 1, 1],
-        [5, 288,  96, 1, 1, 2],
-        [5, 576,  96, 1, 1, 1],
-        [5, 576,  96, 1, 1, 1],
+        [3, 16, 16, 1, 0, 2],
+        [3, 72, 24, 0, 0, 2],
+        [3, 88, 24, 0, 0, 1],
+        [5, 96, 40, 1, 1, 2],
+        [5, 240, 40, 1, 1, 1],
+        [5, 240, 40, 1, 1, 1],
+        [5, 120, 48, 1, 1, 1],
+        [5, 144, 48, 1, 1, 1],
+        [5, 288, 96, 1, 1, 2],
+        [5, 576, 96, 1, 1, 1],
+        [5, 576, 96, 1, 1, 1],
     ]
 
     return MobileNetV3(cfgs, mode='small', **kwargs)
 
+
+if __name__ == '__main__':
+    from PIL import Image
+    from torchvision import transforms
+    import torch
+    from src.demo.info import class_mapping
+
+    transform_test = transforms.Compose([
+        transforms.Resize((224, 224), Image.BILINEAR),
+        transforms.ToTensor(),
+    ])
+    img = Image.open("../../test_images/basset_hound_14.jpg")
+    scaled_img = transform_test(img)
+    torch_images = scaled_img.unsqueeze(0)
+
+    num_classes = 131
+    model = mobilenetv3_large(**{'num_classes': num_classes})
+    model.load_state_dict(torch.load('../../models/mobilenetv3_large.pt'), strict=False)
+
+    model.eval()
+    with torch.no_grad():
+        logits = model(torch_images)
+        _, pred = torch.max(logits, 1)
+        pred_id = pred.item()
+        text_pred = class_mapping[pred_id]
+        print(f'class id: {pred_id}, class name: {text_pred}')

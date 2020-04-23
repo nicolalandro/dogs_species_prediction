@@ -6,9 +6,9 @@ Andrew Howard, Mark Sandler, Grace Chu, Liang-Chieh Chen, Bo Chen, Mingxing Tan,
 Searching for MobileNetV3
 arXiv preprint arXiv:1905.02244.
 """
-import torch
-import torch.nn as nn
 import math
+
+import torch.nn as nn
 
 __all__ = ['mobilenetv3_large', 'mobilenetv3_small']
 
@@ -242,3 +242,30 @@ def mobilenetv3_small(**kwargs):
     ]
 
     return MobileNetV3(cfgs, mode='small', **kwargs)
+
+
+if __name__ == '__main__':
+    from PIL import Image
+    from torchvision import transforms
+    import torch
+    from src.demo.info import class_mapping
+
+    transform_test = transforms.Compose([
+        transforms.Resize((224, 224), Image.BILINEAR),
+        transforms.ToTensor(),
+    ])
+    img = Image.open("../../test_images/basset_hound_14.jpg")
+    scaled_img = transform_test(img)
+    torch_images = scaled_img.unsqueeze(0)
+
+    num_classes = 131
+    model = mobilenetv3_large(**{'num_classes': num_classes})
+    model.load_state_dict(torch.load('../../models/mobilenetv3_ntsnet_transfer.pt'), strict=False)
+
+    model.eval()
+    with torch.no_grad():
+        _, logits = model(torch_images)
+        _, pred = torch.max(logits, 1)
+        pred_id = pred.item()
+        text_pred = class_mapping[pred_id]
+        print(f'class id: {pred_id}, class name: {text_pred}')
