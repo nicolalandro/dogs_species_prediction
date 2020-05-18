@@ -13,6 +13,10 @@ from src.read_from_targz import torch_load_targz
 
 app = Flask(__name__)
 
+net = attention_net(topN=6, num_classes=131, device=(torch.device('cpu')))
+net.load_state_dict(torch_load_targz('models/nts_net_state.tar.gz'))
+net.eval()
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -35,9 +39,6 @@ def model_predict(img):
     scaled_img = transform_test(img)
     torch_images = scaled_img.unsqueeze(0)
 
-    net = attention_net(topN=6, num_classes=131, device=(torch.device('cpu')))
-    net.load_state_dict(torch_load_targz('models/nts_net_state.tar.gz'))
-    net.eval()
     with torch.no_grad():
         _, _, row_logits, concat_logits, _, _, _ = net(torch_images)
         _, concat_predict = torch.max(concat_logits, 1)
